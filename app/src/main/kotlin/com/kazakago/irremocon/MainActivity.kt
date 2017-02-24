@@ -3,76 +3,80 @@ package com.kazakago.irremocon
 import android.app.Activity
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
+import com.google.android.things.contrib.driver.button.Button
+import com.google.android.things.contrib.driver.button.ButtonInputDriver
 import com.google.android.things.pio.Gpio
-import com.google.android.things.pio.GpioCallback
-import com.google.android.things.pio.PeripheralManagerService
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlin.concurrent.schedule
 
 class MainActivity : Activity() {
 
     companion object {
-        private val TAG = MainActivity::class.java.simpleName
-        private val PIN_NAME__IR_SENSER = "BCM18"
+        private val PIN_NAME__IR_RECEIVER = "BCM18"
+        private val PIN_NAME__IR_SENDER = "BCM16"
+        private val PIN_NAME__IR_SEND_BUTTON = "BCM14"
     }
 
-    private lateinit var irSensorGpio: Gpio
-    private var isIrScanning: Boolean = false
-    private var timeList = ArrayList<Long>()
+    private lateinit var irReceiver: IRReceiver
+    private val irReceiverCallback = object : IRReceiverCallback {
 
-    private val gpioCallback = object : GpioCallback() {
-        override fun onGpioEdge(gpio: Gpio): Boolean {
-            if (gpio.value) {
-                Log.i(TAG, "GPIO High " + System.nanoTime())
-            } else {
-                if (isIrScanning) startScan()
-                Log.i(TAG, "GPIO Low " + System.nanoTime())
+        override fun onReceiveIR(irInfoList: List<IRInfo>) {
+            lastReceivedIrInfoList = irInfoList
+            Log.d(javaClass.simpleName, "---- Start IR Receive Log. ---")
+            irInfoList.forEachIndexed { i, irInfo ->
+                Log.d(javaClass.simpleName, i.toString() + " GPIO " + (if (irInfo.gpioActive == Gpio.ACTIVE_HIGH) "HIGH" else "LOW") + " " + irInfo.nanoTime.toString())
             }
-            return true
+            Log.d(javaClass.simpleName, "----  End IR Receive Log.  ---")
         }
 
         override fun onGpioError(gpio: Gpio?, error: Int) {
-            Log.w(TAG, gpio.toString() + ": Error event " + error)
+            Log.d(javaClass.simpleName, "Error : " + error.toString())
         }
     }
+    private lateinit var irSender: IRSender
+    private lateinit var irSendButtonInputDriver: ButtonInputDriver
+    private var lastReceivedIrInfoList: List<IRInfo> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.i(TAG, "Starting MainActivity")
-
-        val service = PeripheralManagerService()
-        irSensorGpio = service.openGpio(PIN_NAME__IR_SENSER)
-        // ピンをインプットモードで動作させます
-        irSensorGpio.setDirection(Gpio.DIRECTION_IN)
-        // センサーがHighを返した時にtrueを返すようにします
-        irSensorGpio.setActiveType(Gpio.ACTIVE_HIGH)
-        // センサーがHigh,Lowどちらかに変更になった場合にコールバック関数を呼び出す
-        irSensorGpio.setEdgeTriggerType(Gpio.EDGE_BOTH)
+        irReceiver = IRReceiver(pinName = PIN_NAME__IR_RECEIVER)
+        irSender = IRSender(pinName = PIN_NAME__IR_SENDER)
+        irSendButtonInputDriver = ButtonInputDriver(PIN_NAME__IR_SEND_BUTTON, Button.LogicState.PRESSED_WHEN_LOW, KeyEvent.KEYCODE_SPACE)
     }
 
     override fun onStart() {
         super.onStart()
-        // コールバックを登録
-        irSensorGpio.registerGpioCallback(gpioCallback)
+        irReceiver.registerCallback(irReceiverCallback)
     }
 
     override fun onStop() {
         super.onStop()
-        // コールバックを解除
-        irSensorGpio.unregisterGpioCallback(gpioCallback)
+        irReceiver.unregisterCallback()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        irSensorGpio.close()
+        irReceiver.close()
+        irSender.close()
+        irSendButtonInputDriver.close()
     }
 
-    fun startScan() {
-        isIrScanning = true
-        timeList.clear()
-        Timer().schedule(TimeUnit.SECONDS.toMillis(1)) {
-            isIrScanning = false
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_SPACE) {
+            onKeyDownSpace()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    private fun onKeyDownSpace() {
+        sendIRInfo(irInfoList = lastReceivedIrInfoList)
+    }
+
+    private fun sendIRInfo(irInfoList: List<IRInfo>) {
+        Log.d(javaClass.simpleName, "---- Start Send IR Info.  ----")
+        irSender.sendIRInfoListAsync(irInfoList = irInfoList) {
+            Log.d(javaClass.simpleName, "---- Finish Send IR Info. ----")
         }
     }
 
