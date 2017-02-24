@@ -6,7 +6,7 @@ android {
     buildToolsVersion '25.0.2'
 
     defaultConfig {
-        applicationId "com.kazakago.humansensor"
+        applicationId "com.kazakago.irremocon"
         minSdkVersion 24
         targetSdkVersion 25
         versionCode 1
@@ -27,8 +27,7 @@ android {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'com.google.android.things.contrib:driver-button:0.2'
-    provided 'com.google.android.things:androidthings:0.1-devpreview'
+    provided 'com.google.android.things:androidthings:0.2-devpreview'
 }
 
 repositories {
