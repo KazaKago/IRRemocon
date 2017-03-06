@@ -13,8 +13,7 @@ import kotlin.concurrent.thread
  *
  * Created by tamura_k on 2017/02/24.
  */
-class IRSender(pinName: String,
-               direction: Int = Gpio.DIRECTION_OUT_INITIALLY_LOW) {
+class IRSender(pinName: String, direction: Int = Gpio.DIRECTION_OUT_INITIALLY_LOW) {
 
     private val senderGpio: Gpio
 

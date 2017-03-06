@@ -7,5 +7,4 @@ package com.kazakago.irremocon
  * @param gpioActive GPIOのActive値
  * Created by tamura_k on 2017/02/24.
  */
-data class IRInfo(val nanoTime: Long,
-                  val gpioActive: Int)
+data class IRInfo(val nanoTime: Long, val gpioActive: Int)

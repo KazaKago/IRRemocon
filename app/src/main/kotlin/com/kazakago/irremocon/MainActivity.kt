@@ -12,9 +12,10 @@ import java.util.*
 class MainActivity : Activity() {
 
     companion object {
+        private val TAG = MainActivity::class.java.simpleName
         private val PIN_NAME__IR_RECEIVER = "BCM18"
         private val PIN_NAME__IR_SENDER = "BCM16"
-        private val PIN_NAME__IR_SEND_BUTTON = "BCM14"
+        private val PIN_NAME__IR_SEND_BUTTON = "BCM21"
     }
 
     private lateinit var irReceiver: IRReceiver
@@ -22,15 +23,15 @@ class MainActivity : Activity() {
 
         override fun onReceiveIR(irInfoList: List<IRInfo>) {
             lastReceivedIrInfoList = irInfoList
-            Log.d(javaClass.simpleName, "---- Start IR Receive Log. ---")
+            Log.d(TAG, "---- Start IR Receive Log. ---")
             irInfoList.forEachIndexed { i, irInfo ->
-                Log.d(javaClass.simpleName, i.toString() + " GPIO " + (if (irInfo.gpioActive == Gpio.ACTIVE_HIGH) "HIGH" else "LOW") + " " + irInfo.nanoTime.toString())
+                Log.d(TAG, i.toString() + " GPIO " + (if (irInfo.gpioActive == Gpio.ACTIVE_HIGH) "HIGH" else "LOW ") + " " + irInfo.nanoTime.toString())
             }
-            Log.d(javaClass.simpleName, "----  End IR Receive Log.  ---")
+            Log.d(TAG, "----  End IR Receive Log.  ---")
         }
 
         override fun onGpioError(gpio: Gpio?, error: Int) {
-            Log.d(javaClass.simpleName, "Error : " + error.toString())
+            Log.d(TAG, "Error : " + error.toString())
         }
     }
     private lateinit var irSender: IRSender
@@ -74,9 +75,9 @@ class MainActivity : Activity() {
     }
 
     private fun sendIRInfo(irInfoList: List<IRInfo>) {
-        Log.d(javaClass.simpleName, "---- Start Send IR Info.  ----")
+        Log.d(TAG, "---- Start Send IR Info.  ----")
         irSender.sendIRInfoListAsync(irInfoList = irInfoList) {
-            Log.d(javaClass.simpleName, "---- Finish Send IR Info. ----")
+            Log.d(TAG, "---- Finish Send IR Info. ----")
         }
     }
 
